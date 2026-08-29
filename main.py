@@ -33,3 +33,24 @@ def get_product_by_id(id: int):
 def add_products(product: Product):
     products.append(product)
     return product
+
+
+@app.put("/product")
+def update_product(id: int, product: Product):
+    for i in range(len(products)):
+        if products[i].id == id:
+            products[i] = product
+            return "Product updated successfully!"
+
+    raise HTTPException(status_code=404, detail="Product Not Found!")
+
+
+@app.delete("/product")
+def delete_product(id: int):
+    for i in range(len(products)):
+        if products[i].id == id:
+            products.remove(products[i])
+            return "Product deleted successfully!"
+
+    raise HTTPException(status_code=404, detail="Product Not Found!")
+ 
