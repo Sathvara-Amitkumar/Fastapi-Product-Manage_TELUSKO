@@ -1,4 +1,5 @@
 from fastapi import FastAPI, HTTPException, Depends
+from fastapi.middleware.cors import CORSMiddleware
 from models import Product
 import model_db 
 from config import session, engine
@@ -6,6 +7,12 @@ from sqlalchemy.orm import Session
 
 app = FastAPI()
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins = ["http://localhost:3000"],
+    allow_methods = ["*"],
+    allow_headers = ["*"],
+)
 
 model_db.base.metadata.create_all(bind=engine)
 
@@ -60,14 +67,14 @@ def get_product_by_id(id: int, db: Session = Depends(get_db)):
     raise HTTPException(status_code=404, detail="Product Not Found!")
 
 
-@app.post("/product")
+@app.post("/products")
 def add_products(product: Product, db: Session = Depends(get_db)):
     db.add(model_db.Product(**product.model_dump()))
     db.commit()
     return product
 
 
-@app.put("/product/{id}")
+@app.put("/products/{id}")
 def update_product(id: int, product: Product, db: Session = Depends(get_db)):
     db_product = db.query(model_db.Product).filter(model_db.Product.id == id).first()
     if db_product:
@@ -81,7 +88,7 @@ def update_product(id: int, product: Product, db: Session = Depends(get_db)):
     raise HTTPException(status_code=404, detail="Product Not Found!")
 
 
-@app.delete("/product")
+@app.delete("/products/{id}")
 def delete_product(id: int, db: Session = Depends(get_db)):
     db_product = db.query(model_db.Product).filter(model_db.Product.id == id).first()
     if db_product:
