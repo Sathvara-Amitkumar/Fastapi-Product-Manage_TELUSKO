@@ -56,35 +56,38 @@ def get_product_by_id(id: int, db: Session = Depends(get_db)):
     db_product = db.query(model_db.Product).filter(model_db.Product.id == id).first()
     if db_product:
         return db_product
-    # for product in products:
-    #     if product.id == id:
-    #         return product
 
     raise HTTPException(status_code=404, detail="Product Not Found!")
 
 
 @app.post("/product")
-def add_products(product: Product):
-    products.append(product)
+def add_products(product: Product, db: Session = Depends(get_db)):
+    db.add(model_db.Product(**product.model_dump()))
+    db.commit()
     return product
 
 
-@app.put("/product")
-def update_product(id: int, product: Product):
-    for i in range(len(products)):
-        if products[i].id == id:
-            products[i] = product
-            return "Product updated successfully!"
-
+@app.put("/product/{id}")
+def update_product(id: int, product: Product, db: Session = Depends(get_db)):
+    db_product = db.query(model_db.Product).filter(model_db.Product.id == id).first()
+    if db_product:
+        db_product.name = product.name
+        db_product.description = product.description
+        db_product.price = product.price
+        db_product.quantity = product.quantity
+        db.commit()
+        return "Product updated successfully!"
+    
     raise HTTPException(status_code=404, detail="Product Not Found!")
 
 
 @app.delete("/product")
-def delete_product(id: int):
-    for i in range(len(products)):
-        if products[i].id == id:
-            products.remove(products[i])
-            return "Product deleted successfully!"
+def delete_product(id: int, db: Session = Depends(get_db)):
+    db_product = db.query(model_db.Product).filter(model_db.Product.id == id).first()
+    if db_product:
+        db.delete(db_product)
+        db.commit()
+        return "Product deleted successfully!"
 
     raise HTTPException(status_code=404, detail="Product Not Found!")
  
