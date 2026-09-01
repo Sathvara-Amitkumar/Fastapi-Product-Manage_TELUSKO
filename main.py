@@ -1,7 +1,8 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Depends
 from models import Product
 import model_db 
 from config import session, engine
+from sqlalchemy.orm import Session
 
 app = FastAPI()
 
@@ -20,18 +21,44 @@ products = [
     Product(id=4, name="Table", description="A wooden table", price=199.99, quantity=20),
 ]
 
-@app.get("/products")
-def get_all_products():
+
+# Dependencie Injection - function to get db
+def get_db():
     db = session()
-    db.query()
-    return products
+    try:
+        yield db
+    finally:
+        db.close()
+
+
+# Database -> Add above products value in product_db
+def init_db():
+    db = session()
+    count = db.query(model_db.Product).count
+
+    if count == 0:
+        for product in products:
+            db.add(model_db.Product(**product.model_dump()))
+        db.commit()
+
+init_db()
+
+
+@app.get("/products")
+def get_all_products(db: Session = Depends(get_db)):
+    db_product = db.query(model_db.Product).all()
+    return db_product
 
 
 @app.get("/products/{id}")
-def get_product_by_id(id: int):
-    for product in products:
-        if product.id == id:
-            return product
+def get_product_by_id(id: int, db: Session = Depends(get_db)):
+
+    db_product = db.query(model_db.Product).filter(model_db.Product.id == id).first()
+    if db_product:
+        return db_product
+    # for product in products:
+    #     if product.id == id:
+    #         return product
 
     raise HTTPException(status_code=404, detail="Product Not Found!")
 
