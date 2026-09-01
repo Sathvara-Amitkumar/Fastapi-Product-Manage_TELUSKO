@@ -1,7 +1,12 @@
 from fastapi import FastAPI, HTTPException
 from models import Product
+import model_db 
+from config import session, engine
 
 app = FastAPI()
+
+
+model_db.base.metadata.create_all(bind=engine)
 
 @app.get("/")
 def home():
@@ -17,6 +22,8 @@ products = [
 
 @app.get("/products")
 def get_all_products():
+    db = session()
+    db.query()
     return products
 
 
